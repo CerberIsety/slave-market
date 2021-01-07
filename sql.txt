@@ -1,0 +1,64 @@
+/* Таблицы БД */
+CREATE TABLE `slaves` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(250) NULL DEFAULT NULL COLLATE 'utf8mb4_unicode_ci',
+	`gender` ENUM('Male','Female') NOT NULL COLLATE 'utf8mb4_unicode_ci',
+	`age` INT(11) NOT NULL,
+	`weight` INT(11) NOT NULL,
+	`skin` ENUM('White','Black','Yellow','Red') NOT NULL DEFAULT 'White' COLLATE 'utf8mb4_unicode_ci',
+	`create_place` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_unicode_ci',
+	`description` TEXT(65535) NOT NULL DEFAULT '' COLLATE 'utf8mb4_unicode_ci',
+	`price_per_hour` FLOAT(12,0) NOT NULL DEFAULT '0',
+	`price` FLOAT(12,0) NOT NULL DEFAULT '0',
+	PRIMARY KEY (`id`) USING BTREE
+)
+COLLATE='utf8mb4_unicode_ci'
+ENGINE=InnoDB
+
+CREATE TABLE `categories` (
+	`id` INT(11) NOT NULL AUTO_INCREMENT,
+	`parent_id` INT(11) NOT NULL DEFAULT '0',
+	`name` VARCHAR(50) NOT NULL COLLATE 'utf8mb4_unicode_ci',
+	PRIMARY KEY (`id`) USING BTREE,
+	INDEX `parent_id` (`parent_id`) USING BTREE
+)
+COLLATE='utf8mb4_unicode_ci'
+ENGINE=InnoDB
+
+CREATE TABLE `slaves_categories` (
+	`slave_id` INT(11) NOT NULL,
+	`category_id` INT(11) NOT NULL,
+	UNIQUE INDEX `slave_id_category_id` (`slave_id`, `category_id`) USING BTREE
+)
+COLLATE='utf8mb4_unicode_ci'
+ENGINE=InnoDB
+
+
+
+/* Запросы из списка */
+SELECT MIN(price), MAX(price), AVG(price) FROM slaves WHERE weight>60
+
+SELECT c.name FROM categories c
+LEFT JOIN slaves_categories sc ON sc.category_id=c.id
+LEFT JOIN slaves s ON s.id=sc.slave_id
+GROUP BY c.id
+HAVING COUNT(s.id)>10
+
+SELECT c.name FROM categories c
+LEFT JOIN slaves_categories sc ON sc.category_id=c.id
+LEFT JOIN slaves s ON s.id=sc.slave_id
+GROUP BY c.id
+ORDER BY SUM(s.price) DESC
+LIMIT 1
+
+SELECT c.name FROM categories c
+LEFT JOIN slaves_categories sc ON sc.category_id=c.id
+LEFT JOIN slaves s ON s.id=sc.slave_id
+GROUP BY c.id
+HAVING SUM(IF(s.gender='Male',1,0)) > SUM(IF(s.gender='Female',1,0))
+
+SELECT COUNT(DISTINCT s.id) FROM categories c
+LEFT JOIN slaves_categories sc ON sc.category_id=c.id
+LEFT JOIN slaves s ON s.id=sc.slave_id
+WHERE c.parent_id=(SELECT id FROM categories WHERE `name`='Для кухни' LIMIT 1)
+OR c.id=(SELECT id FROM categories WHERE `name`='Для кухни' LIMIT 1)
